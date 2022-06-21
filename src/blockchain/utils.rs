@@ -168,17 +168,14 @@ pub trait ElectrumLikeSync {
             }
         }
 
-        // remove any tx details in db but not in history_txs_id
-        for txid in txs_details_in_db.keys() {
-            if !history_txs_id.contains(txid) {
-                batch.del_tx(txid, false)?;
-            }
-        }
-
         // remove any spent utxo
         for new_tx in new_txs.iter() {
             for input in new_tx.input.iter() {
-                batch.del_utxo(&input.previous_output)?;
+                let utxo = db.get_utxo(&input.previous_output)?;
+                if let Some(mut utxo) = utxo {
+                    utxo.is_spent = true;
+                    db.set_utxo(&utxo)?;
+                }
             }
         }
 
@@ -333,7 +330,10 @@ fn save_transaction_details_and_utxos<D: BatchDatabase>(
 
         // removes conflicting UTXO if any (generated from same inputs, like for example RBF)
         if let Some(outpoint) = utxo_deps.get(&input.previous_output) {
-            updates.del_utxo(outpoint)?;
+            if let Some(mut spent_utxo) = db.get_utxo(&outpoint)? {
+                spent_utxo.is_spent = true;
+                updates.set_utxo(&spent_utxo)?;
+            }
         }
     }
 
@@ -348,6 +348,7 @@ fn save_transaction_details_and_utxos<D: BatchDatabase>(
                 outpoint: OutPoint::new(tx.txid(), i as u32),
                 txout: output.clone(),
                 keychain,
+                is_spent: false,
             })?;
 
             incoming += output.value;

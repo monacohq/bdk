@@ -831,6 +831,7 @@ mod test {
                 },
                 txout: Default::default(),
                 keychain: KeychainKind::External,
+                is_spent: false,
             },
             LocalUtxo {
                 outpoint: OutPoint {
@@ -839,6 +840,7 @@ mod test {
                 },
                 txout: Default::default(),
                 keychain: KeychainKind::Internal,
+                is_spent: false,
             },
         ]
     }
