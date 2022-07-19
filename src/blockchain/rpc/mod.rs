@@ -38,6 +38,7 @@ use crate::database::{BatchDatabase, DatabaseUtils};
 use crate::descriptor::{get_checksum, IntoWalletDescriptor};
 use crate::wallet::utils::SecpCtx;
 use crate::{ConfirmationTime, Error, FeeRate, KeychainKind, LocalUtxo, TransactionDetails};
+use ::ureq::Agent;
 use bitcoincore_rpc::json::{
     GetAddressInfoResultLabel, ImportMultiOptions, ImportMultiRequest,
     ImportMultiRequestScriptPubkey, ImportMultiRescanSince,
@@ -68,10 +69,13 @@ pub struct RpcBlockchain {
 }
 
 /// RpcBlockchain configuration options
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RpcConfig {
     /// The bitcoin node url
     pub url: String,
+    /// The ureq agent
+    #[serde(skip)]
+    pub agent: Option<Agent>,
     /// The bitcoin node authentication mechanism
     pub auth: Auth,
     /// The network we are using (it will be checked the bitcoin node network matches this)
@@ -133,6 +137,10 @@ impl RpcBlockchain {
         Ok(self
             .client
             .set_label(&self._storage_address, &height.to_string())?)
+    }
+
+    pub fn get_version(&self) -> Result<usize, Error> {
+        Ok(self.client.version()?)
     }
 }
 
@@ -357,7 +365,11 @@ impl ConfigurableBlockchain for RpcBlockchain {
         let wallet_url = format!("{}/wallet/{}", config.url, &wallet_name);
         debug!("connecting to {} auth:{:?}", wallet_url, config.auth);
 
-        let client = Client::new(wallet_url, config.auth.clone().into())?;
+        let client = if let Some(agent) = &config.agent {
+            Client::new_ureq(&wallet_url, agent.clone())
+        } else {
+            Client::new(&wallet_url, config.auth.clone().into())?
+        };
         let loaded_wallets = client.list_wallets()?;
         if loaded_wallets.contains(&wallet_name) {
             debug!("wallet already loaded {:?}", wallet_name);

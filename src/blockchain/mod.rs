@@ -37,6 +37,7 @@ pub(crate) mod utils;
     feature = "rpc"
 ))]
 pub mod any;
+pub mod stratis;
 #[cfg(any(
     feature = "electrum",
     feature = "esplora",
