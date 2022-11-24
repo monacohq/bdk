@@ -589,7 +589,8 @@ macro_rules! doctest_wallet {
             &descriptors.0,
             descriptors.1.as_ref(),
             Network::Regtest,
-            db
+            db,
+            Blockchain::Bitcoin,
         )
         .unwrap()
     }}

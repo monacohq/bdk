@@ -18,7 +18,7 @@ use std::collections::BTreeMap;
 
 use bitcoin::util::bip32::{ChildNumber, DerivationPath, ExtendedPubKey, Fingerprint, KeySource};
 use bitcoin::util::{psbt, taproot};
-use bitcoin::{secp256k1, PublicKey, XOnlyPublicKey};
+use bitcoin::{secp256k1, Blockchain, PublicKey, XOnlyPublicKey};
 use bitcoin::{Network, TxOut};
 
 use miniscript::descriptor::{
@@ -374,6 +374,7 @@ pub(crate) trait DescriptorMeta {
         psbt_input: &psbt::Input,
         utxo: Option<TxOut>,
         secp: &'s SecpCtx,
+        chain: Blockchain,
     ) -> Option<DerivedDescriptor>;
 }
 
@@ -531,6 +532,7 @@ impl DescriptorMeta for ExtendedDescriptor {
         psbt_input: &psbt::Input,
         utxo: Option<TxOut>,
         secp: &'s SecpCtx,
+        chain: Blockchain,
     ) -> Option<DerivedDescriptor> {
         if let Some(derived) = self.derive_from_hd_keypaths(&psbt_input.bip32_derivation, secp) {
             return Some(derived);
@@ -551,13 +553,13 @@ impl DescriptorMeta for ExtendedDescriptor {
             | DescriptorType::ShWpkh
             | DescriptorType::Tr
                 if utxo.is_some()
-                    && descriptor.script_pubkey() == utxo.as_ref().unwrap().script_pubkey =>
+                    && descriptor.script_pubkey(chain) == utxo.as_ref().unwrap().script_pubkey =>
             {
                 Some(descriptor)
             }
             DescriptorType::Bare | DescriptorType::Sh | DescriptorType::ShSortedMulti
                 if psbt_input.redeem_script.is_some()
-                    && &descriptor.explicit_script().unwrap()
+                    && &descriptor.explicit_script(chain).unwrap()
                         == psbt_input.redeem_script.as_ref().unwrap() =>
             {
                 Some(descriptor)
@@ -567,7 +569,7 @@ impl DescriptorMeta for ExtendedDescriptor {
             | DescriptorType::ShWshSortedMulti
             | DescriptorType::WshSortedMulti
                 if psbt_input.witness_script.is_some()
-                    && &descriptor.explicit_script().unwrap()
+                    && &descriptor.explicit_script(chain).unwrap()
                         == psbt_input.witness_script.as_ref().unwrap() =>
             {
                 Some(descriptor)
@@ -610,7 +612,12 @@ mod test {
         .unwrap();
 
         assert!(descriptor
-            .derive_from_psbt_input(&psbt.inputs[0], psbt.get_utxo_for(0), &Secp256k1::new())
+            .derive_from_psbt_input(
+                &psbt.inputs[0],
+                psbt.get_utxo_for(0),
+                &Secp256k1::new(),
+                Blockchain::Bitcoin
+            )
             .is_some());
     }
 
@@ -641,7 +648,12 @@ mod test {
         .unwrap();
 
         assert!(descriptor
-            .derive_from_psbt_input(&psbt.inputs[0], psbt.get_utxo_for(0), &Secp256k1::new())
+            .derive_from_psbt_input(
+                &psbt.inputs[0],
+                psbt.get_utxo_for(0),
+                &Secp256k1::new(),
+                Blockchain::Bitcoin
+            )
             .is_some());
     }
 
@@ -665,7 +677,12 @@ mod test {
         .unwrap();
 
         assert!(descriptor
-            .derive_from_psbt_input(&psbt.inputs[0], psbt.get_utxo_for(0), &Secp256k1::new())
+            .derive_from_psbt_input(
+                &psbt.inputs[0],
+                psbt.get_utxo_for(0),
+                &Secp256k1::new(),
+                Blockchain::Bitcoin
+            )
             .is_some());
     }
 
@@ -695,7 +712,12 @@ mod test {
         .unwrap();
 
         assert!(descriptor
-            .derive_from_psbt_input(&psbt.inputs[0], psbt.get_utxo_for(0), &Secp256k1::new())
+            .derive_from_psbt_input(
+                &psbt.inputs[0],
+                psbt.get_utxo_for(0),
+                &Secp256k1::new(),
+                Blockchain::Bitcoin
+            )
             .is_some());
     }
 
@@ -864,7 +886,7 @@ mod test {
 
         let mut psbt_input = psbt::Input::default();
         psbt_input
-            .update_with_descriptor_unchecked(&descriptor)
+            .update_with_descriptor_unchecked(&descriptor, Blockchain::Bitcoin)
             .unwrap();
 
         assert_eq!(psbt_input.redeem_script, Some(script.to_v0_p2wsh()));

@@ -32,7 +32,8 @@ use log::{debug, error, info, trace};
 
 use bitcoin::{Transaction, Txid};
 
-use electrum_client::{Client, ConfigBuilder, ElectrumApi, Socks5Config};
+use electrum_client::raw_client::RawClient;
+use electrum_client::ElectrumApi;
 
 use super::script_sync::Request;
 use super::*;

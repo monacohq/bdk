@@ -16,14 +16,14 @@
 
 use bitcoin::util::bip32;
 use bitcoin::Network;
-
 use miniscript::{Legacy, Segwitv0};
 
-use super::{ExtendedDescriptor, IntoWalletDescriptor, KeyMap};
 use crate::descriptor::DescriptorError;
 use crate::keys::{DerivableKey, IntoDescriptorKey, ValidNetworks};
 use crate::wallet::utils::SecpCtx;
 use crate::{descriptor, KeychainKind};
+
+use super::{ExtendedDescriptor, IntoWalletDescriptor, KeyMap};
 
 /// Type alias for the return type of [`DescriptorTemplate`], [`descriptor!`](crate::descriptor!) and others
 pub type DescriptorTemplateOut = (ExtendedDescriptor, KeyMap, ValidNetworks);
@@ -72,7 +72,7 @@ impl<T: DescriptorTemplate> IntoWalletDescriptor for T {
 /// ## Example
 ///
 /// ```
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{PrivateKey, Network, Blockchain};
 /// # use bdk::{Wallet};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -85,6 +85,7 @@ impl<T: DescriptorTemplate> IntoWalletDescriptor for T {
 ///     None,
 ///     Network::Testnet,
 ///     MemoryDatabase::default(),
+///     Blockchain::Bitcoin,
 /// )?;
 ///
 /// assert_eq!(
@@ -106,7 +107,7 @@ impl<K: IntoDescriptorKey<Legacy>> DescriptorTemplate for P2Pkh<K> {
 /// ## Example
 ///
 /// ```
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{PrivateKey, Network, Blockchain};
 /// # use bdk::{Wallet};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -119,6 +120,7 @@ impl<K: IntoDescriptorKey<Legacy>> DescriptorTemplate for P2Pkh<K> {
 ///     None,
 ///     Network::Testnet,
 ///     MemoryDatabase::default(),
+///     Blockchain::Bitcoin,
 /// )?;
 ///
 /// assert_eq!(
@@ -141,7 +143,7 @@ impl<K: IntoDescriptorKey<Segwitv0>> DescriptorTemplate for P2Wpkh_P2Sh<K> {
 /// ## Example
 ///
 /// ```
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{PrivateKey, Network, Blockchain};
 /// # use bdk::{Wallet};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -154,6 +156,7 @@ impl<K: IntoDescriptorKey<Segwitv0>> DescriptorTemplate for P2Wpkh_P2Sh<K> {
 ///     None,
 ///     Network::Testnet,
 ///     MemoryDatabase::default(),
+///     Blockchain::Bitcoin,
 /// )?;
 ///
 /// assert_eq!(
@@ -180,7 +183,7 @@ impl<K: IntoDescriptorKey<Segwitv0>> DescriptorTemplate for P2Wpkh<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{PrivateKey, Network, Blockchain};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -191,7 +194,8 @@ impl<K: IntoDescriptorKey<Segwitv0>> DescriptorTemplate for P2Wpkh<K> {
 ///     Bip44(key.clone(), KeychainKind::External),
 ///     Some(Bip44(key, KeychainKind::Internal)),
 ///     Network::Testnet,
-///     MemoryDatabase::default()
+///     MemoryDatabase::default(),
+///     Blockchain::Bitcoin,
 /// )?;
 ///
 /// assert_eq!(wallet.get_address(New)?.to_string(), "mmogjc7HJEZkrLqyQYqJmxUqFaC7i4uf89");
@@ -219,7 +223,7 @@ impl<K: DerivableKey<Legacy>> DescriptorTemplate for Bip44<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{PrivateKey, Network, Blockchain};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -231,7 +235,8 @@ impl<K: DerivableKey<Legacy>> DescriptorTemplate for Bip44<K> {
 ///     Bip44Public(key.clone(), fingerprint, KeychainKind::External),
 ///     Some(Bip44Public(key, fingerprint, KeychainKind::Internal)),
 ///     Network::Testnet,
-///     MemoryDatabase::default()
+///     MemoryDatabase::default(),
+///     Blockchain::Bitcoin,
 /// )?;
 ///
 /// assert_eq!(wallet.get_address(New)?.to_string(), "miNG7dJTzJqNbFS19svRdTCisC65dsubtR");
@@ -259,7 +264,7 @@ impl<K: DerivableKey<Legacy>> DescriptorTemplate for Bip44Public<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{PrivateKey, Network, Blockchain};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -270,7 +275,8 @@ impl<K: DerivableKey<Legacy>> DescriptorTemplate for Bip44Public<K> {
 ///     Bip49(key.clone(), KeychainKind::External),
 ///     Some(Bip49(key, KeychainKind::Internal)),
 ///     Network::Testnet,
-///     MemoryDatabase::default()
+///     MemoryDatabase::default(),
+///     Blockchain::Bitcoin,
 /// )?;
 ///
 /// assert_eq!(wallet.get_address(New)?.to_string(), "2N4zkWAoGdUv4NXhSsU8DvS5MB36T8nKHEB");
@@ -298,6 +304,7 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip49<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
+/// # use bitcoin::Blockchain;
 /// # use bdk::bitcoin::{PrivateKey, Network};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
@@ -310,7 +317,8 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip49<K> {
 ///     Bip49Public(key.clone(), fingerprint, KeychainKind::External),
 ///     Some(Bip49Public(key, fingerprint, KeychainKind::Internal)),
 ///     Network::Testnet,
-///     MemoryDatabase::default()
+///     MemoryDatabase::default(),
+///     Blockchain::Bitcoin,
 /// )?;
 ///
 /// assert_eq!(wallet.get_address(New)?.to_string(), "2N3K4xbVAHoiTQSwxkZjWDfKoNC27pLkYnt");
@@ -338,7 +346,7 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip49Public<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{PrivateKey, Network, Blockchain};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -349,7 +357,8 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip49Public<K> {
 ///     Bip84(key.clone(), KeychainKind::External),
 ///     Some(Bip84(key, KeychainKind::Internal)),
 ///     Network::Testnet,
-///     MemoryDatabase::default()
+///     MemoryDatabase::default(),
+///     Blockchain::Bitcoin,
 /// )?;
 ///
 /// assert_eq!(wallet.get_address(New)?.to_string(), "tb1qhl85z42h7r4su5u37rvvw0gk8j2t3n9y7zsg4n");
@@ -377,7 +386,7 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip84<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{PrivateKey, Network, Blockchain};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -389,7 +398,8 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip84<K> {
 ///     Bip84Public(key.clone(), fingerprint, KeychainKind::External),
 ///     Some(Bip84Public(key, fingerprint, KeychainKind::Internal)),
 ///     Network::Testnet,
-///     MemoryDatabase::default()
+///     MemoryDatabase::default(),
+///     Blockchain::Bitcoin,
 /// )?;
 ///
 /// assert_eq!(wallet.get_address(New)?.to_string(), "tb1qedg9fdlf8cnnqfd5mks6uz5w4kgpk2pr6y4qc7");
@@ -478,15 +488,18 @@ expand_make_bipxx!(segwit_v0, Segwitv0);
 mod test {
     // test existing descriptor templates, make sure they are expanded to the right descriptors
 
+    use bitcoin::Blockchain;
     use std::str::FromStr;
 
-    use super::*;
-    use crate::descriptor::{DescriptorError, DescriptorMeta};
-    use crate::keys::ValidNetworks;
     use assert_matches::assert_matches;
     use bitcoin::network::constants::Network::Regtest;
     use miniscript::descriptor::{DescriptorPublicKey, KeyMap};
     use miniscript::Descriptor;
+
+    use crate::descriptor::{DescriptorError, DescriptorMeta};
+    use crate::keys::ValidNetworks;
+
+    use super::*;
 
     // BIP44 `pkh(key/44'/{0,1}'/0'/{0,1}/*)`
     #[test]
@@ -539,7 +552,7 @@ mod test {
             } else {
                 desc.at_derivation_index(index)
             };
-            let address = child_desc.address(Regtest).unwrap();
+            let address = child_desc.address(Regtest, Blockchain::Bitcoin).unwrap();
             assert_eq!(address.to_string(), *expected.get(i).unwrap());
         }
     }

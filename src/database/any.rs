@@ -19,16 +19,16 @@
 //! In this example, `wallet_memory` and `wallet_sled` have the same type of `Wallet<(), AnyDatabase>`.
 //!
 //! ```no_run
-//! # use bitcoin::Network;
+//! # use bitcoin::{Network, Blockchain};
 //! # use bdk::database::{AnyDatabase, MemoryDatabase};
 //! # use bdk::{Wallet};
 //! let memory = MemoryDatabase::default();
-//! let wallet_memory = Wallet::new("...", None, Network::Testnet, memory)?;
+//! let wallet_memory = Wallet::new("...", None, Network::Testnet, memory, Blockchain::Bitcoin)?;
 //!
 //! # #[cfg(feature = "key-value-db")]
 //! # {
 //! let sled = sled::open("my-database")?.open_tree("default_tree")?;
-//! let wallet_sled = Wallet::new("...", None, Network::Testnet, sled)?;
+//! let wallet_sled = Wallet::new("...", None, Network::Testnet, sled, Blockchain::Bitcoin)?;
 //! # }
 //! # Ok::<(), bdk::Error>(())
 //! ```
@@ -37,12 +37,12 @@
 //! database supported using a single line of code:
 //!
 //! ```no_run
-//! # use bitcoin::Network;
+//! # use bitcoin::{Network, Blockchain};
 //! # use bdk::database::*;
 //! # use bdk::{Wallet};
 //! let config = serde_json::from_str("...")?;
 //! let database = AnyDatabase::from_config(&config)?;
-//! let wallet = Wallet::new("...", None, Network::Testnet, database)?;
+//! let wallet = Wallet::new("...", None, Network::Testnet, database, Blockchain::Bitcoin)?;
 //! # Ok::<(), bdk::Error>(())
 //! ```
 

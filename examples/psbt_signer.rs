@@ -52,6 +52,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Some(watch_only_internal_descriptor),
         Network::Testnet,
         MemoryDatabase::default(),
+        bitcoin::Blockchain::Bitcoin,
     )?;
 
     // create signing wallet
@@ -60,6 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Some(signing_internal_descriptor),
         Network::Testnet,
         MemoryDatabase::default(),
+        bitcoin::Blockchain::Bitcoin,
     )?;
 
     println!("Syncing watch only wallet.");

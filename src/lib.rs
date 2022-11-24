@@ -63,6 +63,7 @@ fn main() -> Result<(), bdk::Error> {
         Some("wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/1/*)"),
         bitcoin::Network::Testnet,
         MemoryDatabase::default(),
+        bitcoin::Blockchain::Bitcoin,
     )?;
 
     wallet.sync(&blockchain, SyncOptions::default())?;
@@ -89,6 +90,7 @@ fn main() -> Result<(), bdk::Error> {
 //!         Some("wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/1/*)"),
 //!         bitcoin::Network::Testnet,
 //!         MemoryDatabase::default(),
+//!         bitcoin::Blockchain::Bitcoin,
 //!     )?;
 //!
 //!     println!("Address #0: {}", wallet.get_address(New)?);
@@ -119,6 +121,7 @@ fn main() -> Result<(), bdk::Error> {
         Some("wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/1/*)"),
         bitcoin::Network::Testnet,
         MemoryDatabase::default(),
+        bitcoin::Blockchain::Bitcoin,
     )?;
     let blockchain = ElectrumBlockchain::from(client);
 
@@ -160,6 +163,7 @@ fn main() -> Result<(), bdk::Error> {
 //!         Some("wpkh([c258d2e4/84h/1h/0h]tprv8griRPhA7342zfRyB6CqeKF8CJDXYu5pgnj1cjL1u2ngKcJha5jjTRimG82ABzJQ4MQe71CV54xfn25BbhCNfEGGJZnxvCDQCd6JkbvxW6h/1/*)"),
 //!         bitcoin::Network::Testnet,
 //!         MemoryDatabase::default(),
+//!         bitcoin::Blockchain::Bitcoin,
 //!     )?;
 //!
 //!     let psbt = "...";
