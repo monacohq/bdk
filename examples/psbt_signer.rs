@@ -6,6 +6,7 @@
 // You may not use this file except in accordance with one or both of these
 // licenses.
 
+use bdk::blockchain::electrum::Client;
 use bdk::blockchain::{Blockchain, ElectrumBlockchain};
 use bdk::database::MemoryDatabase;
 use bdk::wallet::AddressIndex;
@@ -13,7 +14,6 @@ use bdk::{descriptor, SyncOptions};
 use bdk::{FeeRate, SignOptions, Wallet};
 use bitcoin::secp256k1::Secp256k1;
 use bitcoin::{Address, Network};
-use electrum_client::Client;
 use miniscript::descriptor::DescriptorSecretKey;
 use std::error::Error;
 use std::str::FromStr;
@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // create client for Blockstream's testnet electrum server
     let blockchain =
-        ElectrumBlockchain::from(Client::new("ssl://electrum.blockstream.info:60002")?);
+        ElectrumBlockchain::from(Client::new("ssl://electrum.blockstream.info:60002", None)?);
 
     // create watch only wallet
     let watch_only_wallet: Wallet<MemoryDatabase> = Wallet::new(

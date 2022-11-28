@@ -19,7 +19,7 @@ use syn::{parse, ImplItemMethod, ItemImpl, ItemTrait, Token};
 
 fn add_async_trait(mut parsed: ItemTrait) -> TokenStream {
     let output = quote! {
-        #[cfg(all(not(target_arch = "wasm32"), not(feature = "async-interface")))]
+        #[cfg(all(not(target_arch = "wasm32"), not(target_env = "sgx"), not(feature = "async-interface")))]
         #parsed
     };
 
@@ -32,7 +32,7 @@ fn add_async_trait(mut parsed: ItemTrait) -> TokenStream {
     let output = quote! {
         #output
 
-        #[cfg(any(target_arch = "wasm32", feature = "async-interface"))]
+        #[cfg(any(target_arch = "wasm32", target_env = "sgx", feature = "async-interface"))]
         #[async_trait(?Send)]
         #parsed
     };
@@ -42,7 +42,7 @@ fn add_async_trait(mut parsed: ItemTrait) -> TokenStream {
 
 fn add_async_method(mut parsed: ImplItemMethod) -> TokenStream {
     let output = quote! {
-        #[cfg(all(not(target_arch = "wasm32"), not(feature = "async-interface")))]
+        #[cfg(all(not(target_arch = "wasm32"), not(target_env = "sgx"), not(feature = "async-interface")))]
         #parsed
     };
 
@@ -51,7 +51,7 @@ fn add_async_method(mut parsed: ImplItemMethod) -> TokenStream {
     let output = quote! {
         #output
 
-        #[cfg(any(target_arch = "wasm32", feature = "async-interface"))]
+        #[cfg(any(target_arch = "wasm32", target_env = "sgx", feature = "async-interface"))]
         #parsed
     };
 
@@ -60,7 +60,7 @@ fn add_async_method(mut parsed: ImplItemMethod) -> TokenStream {
 
 fn add_async_impl_trait(mut parsed: ItemImpl) -> TokenStream {
     let output = quote! {
-        #[cfg(all(not(target_arch = "wasm32"), not(feature = "async-interface")))]
+        #[cfg(all(not(target_arch = "wasm32"), not(target_env = "sgx"), not(feature = "async-interface")))]
         #parsed
     };
 
@@ -73,7 +73,7 @@ fn add_async_impl_trait(mut parsed: ItemImpl) -> TokenStream {
     let output = quote! {
         #output
 
-        #[cfg(any(target_arch = "wasm32", feature = "async-interface"))]
+        #[cfg(any(target_arch = "wasm32", target_env = "sgx", feature = "async-interface"))]
         #[async_trait(?Send)]
         #parsed
     };
@@ -107,12 +107,12 @@ pub fn maybe_await(expr: TokenStream) -> TokenStream {
     let expr: proc_macro2::TokenStream = expr.into();
     let quoted = quote! {
         {
-            #[cfg(all(not(target_arch = "wasm32"), not(feature = "async-interface")))]
+            #[cfg(all(not(target_arch = "wasm32"), not(target_env = "sgx"), not(feature = "async-interface")))]
             {
                 #expr
             }
 
-            #[cfg(any(target_arch = "wasm32", feature = "async-interface"))]
+            #[cfg(any(target_arch = "wasm32", target_env = "sgx", feature = "async-interface"))]
             {
                 #expr.await
             }
@@ -130,12 +130,12 @@ pub fn await_or_block(expr: TokenStream) -> TokenStream {
     let expr: proc_macro2::TokenStream = expr.into();
     let quoted = quote! {
         {
-            #[cfg(all(not(target_arch = "wasm32"), not(feature = "async-interface")))]
+            #[cfg(all(not(target_arch = "wasm32"), not(target_env = "sgx"), not(feature = "async-interface")))]
             {
                 tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap().block_on(#expr)
             }
 
-            #[cfg(any(target_arch = "wasm32", feature = "async-interface"))]
+            #[cfg(any(target_arch = "wasm32", target_env = "sgx", feature = "async-interface"))]
             {
                 #expr.await
             }

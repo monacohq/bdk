@@ -20,8 +20,7 @@ rand = "^0.8"
 
 # Optional dependencies
 sled = { version = "0.34", optional = true }
-electrum-client = { version = "0.12", optional = true }
-esplora-client = { version = "0.3", default-features = false, optional = true }
+electrum-client = { version = "0.12", default-features = false, optional = true }
 rusqlite = { version = "0.27.0", optional = true }
 ahash = { version = "0.7.6", optional = true }
 futures = { version = "0.3", optional = true }
@@ -37,18 +36,24 @@ bitcoinconsensus = { version = "0.19.0-3", optional = true }
 # Needed by bdk_blockchain_tests macro and the `rpc` feature
 bitcoincore-rpc = { version = "0.16", optional = true }
 
+[dependencies.esplora-client]
+git = "https://github.com/weiwencrypto/rust-esplora-client.git"
+default-features = false
+optional = true
+rev = "18a9730"
+
 [dependencies.bitcoin]
-git = "ssh://git@github.com/weiwencrypto/rust-bitcoin.git"
-rev = "3d2a443"
+git = "ssh://git@github.com/monacohq/rust-bitcoin.git"
+branch = "altcoin-support-v0.29.2"
 features = ["serde", "base64", "rand"]
 
 [dependencies.miniscript]
-git = "ssh://git@github.com/weiwencrypto/rust-miniscript.git"
-rev = "25d5f89"
+git = "ssh://git@github.com/monacohq/rust-miniscript.git"
+branch = "altcoin-support-v9.0.0"
 features = ["serde"]
 
 # Platform-specific dependencies
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+[target.'cfg(all(not(target_arch = "wasm32"), not(target_env = "sgx")))'.dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -175,5 +180,5 @@ features = ["compiler", "electrum", "esplora", "use-esplora-blocking", "compact_
 rustdoc-args = ["--cfg", "docsrs"]
 
 [patch.crates-io]
-bitcoin = { git = "ssh://git@github.com/weiwencrypto/rust-bitcoin.git", rev = "3d2a443" }
+bitcoin = { git = "ssh://git@github.com/monacohq/rust-bitcoin.git", branch = "altcoin-support-v0.29.2" }
 atty = { git = "https://git@github.com/softprops/atty.git", rev = "6633c0e1446aa19e6cd00e00e39770da43081bda" } # Includes SGX patches

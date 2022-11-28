@@ -11,20 +11,16 @@
 
 //! Electrum
 //!
-//! This module defines a [`Blockchain`] struct that wraps an [`electrum_client::Client`]
+//! This module defines a [`Blockchain`] struct that wraps an [`electrum_client::RawClient`]
 //! and implements the logic required to populate the wallet's [database](crate::database::Database) by
 //! querying the inner client.
 //!
-//! ## Example
-//!
-//! ```no_run
-//! # use bdk::blockchain::electrum::ElectrumBlockchain;
-//! let client = electrum_client::Client::new("ssl://electrum.blockstream.info:50002")?;
-//! let blockchain = ElectrumBlockchain::from(client);
-//! # Ok::<(), bdk::Error>(())
+//! Use with Fortanix SGX requires use of `RawClient` instead of `Client`
+//! because we have to do our own DNS resolution.
 //! ```
 
 use std::collections::{HashMap, HashSet};
+use std::net::TcpStream;
 use std::ops::Deref;
 
 #[allow(unused_imports)]
@@ -32,14 +28,18 @@ use log::{debug, error, info, trace};
 
 use bitcoin::{Transaction, Txid};
 
-use electrum_client::raw_client::RawClient;
 use electrum_client::ElectrumApi;
+use electrum_client::raw_client::RawClient;
 
 use super::script_sync::Request;
 use super::*;
 use crate::database::{BatchDatabase, Database};
 use crate::error::Error;
 use crate::{BlockTime, FeeRate};
+
+/// Use with Fortanix SGX requires use of `RawClient` instead of `Client`
+/// because we have to do our own qDNS resolution.
+pub type Client = RawClient<TcpStream>;
 
 /// Wrapper over an Electrum Client that implements the required blockchain traits
 ///
@@ -320,19 +320,8 @@ pub struct ElectrumBlockchainConfig {
 impl ConfigurableBlockchain for ElectrumBlockchain {
     type Config = ElectrumBlockchainConfig;
 
-    fn from_config(config: &Self::Config) -> Result<Self, Error> {
-        let socks5 = config.socks5.as_ref().map(Socks5Config::new);
-        let electrum_config = ConfigBuilder::new()
-            .retry(config.retry)
-            .timeout(config.timeout)?
-            .socks5(socks5)?
-            .validate_domain(config.validate_domain)
-            .build();
-
-        Ok(ElectrumBlockchain {
-            client: Client::from_config(config.url.as_str(), electrum_config)?,
-            stop_gap: config.stop_gap,
-        })
+    fn from_config(_config: &Self::Config) -> Result<Self, Error> {
+        unimplemented!("We don't want this but removing it prevents `any` from building")
     }
 }
 
@@ -357,7 +346,7 @@ mod test {
         let test_client = TestClient::default();
 
         let factory = Arc::new(ElectrumBlockchain::from(
-            Client::new(&test_client.electrsd.electrum_url).unwrap(),
+            Client::new(&test_client.electrsd.electrum_url, None).unwrap(),
         ));
 
         (test_client, factory)
@@ -386,6 +375,7 @@ mod test {
             None,
             bitcoin::Network::Regtest,
             db,
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
