@@ -45,7 +45,7 @@
 //!
 //! # Examples
 #![cfg_attr(
-    feature = "electrum",
+    all(feature = "electrum", features = "proxy"),
     doc = r##"
 ## Sync the balance of a descriptor
 
@@ -101,7 +101,7 @@ fn main() -> Result<(), bdk::Error> {
 //! }
 //! ```
 #![cfg_attr(
-    feature = "electrum",
+    all(feature = "electrum", features = "proxy"),
     doc = r##"
 ## Create a transaction
 
