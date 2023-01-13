@@ -28,8 +28,8 @@ use log::{debug, error, info, trace};
 
 use bitcoin::{Transaction, Txid};
 
-use electrum_client::ElectrumApi;
 use electrum_client::raw_client::RawClient;
+use electrum_client::ElectrumApi;
 
 use super::script_sync::Request;
 use super::*;
@@ -206,13 +206,18 @@ impl WalletSync for ElectrumBlockchain {
                     let full_transactions = needs_full
                         .map(|txid| tx_cache.get(*txid).ok_or_else(electrum_goof))
                         .collect::<Result<Vec<_>, _>>()?;
-                    let input_txs = full_transactions.iter().flat_map(|tx| {
-                        tx.input
-                            .iter()
-                            .filter(|input| !input.previous_output.is_null())
-                            .map(|input| &input.previous_output.txid)
-                    });
-                    tx_cache.save_txs(input_txs)?;
+                    let input_txs = full_transactions
+                        .iter()
+                        .flat_map(|tx| {
+                            tx.input
+                                .iter()
+                                .filter(|input| !input.previous_output.is_null())
+                                .map(|input| input.previous_output.txid)
+                        })
+                        .collect::<Vec<_>>();
+                    for input_txs_chunk in input_txs.chunks(chunk_size) {
+                        tx_cache.save_txs(input_txs_chunk.iter())?;
+                    }
 
                     let full_details = full_transactions
                         .into_iter()
