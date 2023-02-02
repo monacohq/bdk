@@ -40,7 +40,7 @@ bitcoincore-rpc = { version = "0.16", optional = true }
 git = "https://github.com/monacohq/rust-esplora-client.git"
 default-features = false
 optional = true
-rev = "18a9730"
+branch = "sgx"
 
 [dependencies.bitcoin]
 git = "ssh://git@github.com/monacohq/rust-bitcoin.git"
