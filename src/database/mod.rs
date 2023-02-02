@@ -43,6 +43,11 @@ pub(crate) mod sqlite;
 #[cfg(feature = "sqlite")]
 pub use sqlite::SqliteDatabase;
 
+#[cfg(feature = "postgres-db")]
+pub(crate) mod postgres_db;
+#[cfg(feature = "postgres-db")]
+pub use postgres_db::PostgresDatabase;
+
 pub mod memory;
 pub use memory::MemoryDatabase;
 
