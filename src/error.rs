@@ -147,6 +147,9 @@ pub enum Error {
     #[cfg(feature = "sqlite")]
     /// Rusqlite client error
     Rusqlite(rusqlite::Error),
+    #[cfg(feature = "postgres-db")]
+    /// Postgres client error
+    Postgres(postgres::Error),
 }
 
 /// Errors returned by miniscript when updating inconsistent PSBTs
@@ -221,6 +224,8 @@ impl_error!(sled::Error, Sled);
 impl_error!(bitcoincore_rpc::Error, Rpc);
 #[cfg(feature = "sqlite")]
 impl_error!(rusqlite::Error, Rusqlite);
+#[cfg(feature = "postgres-db")]
+impl_error!(postgres::Error, Postgres);
 
 #[cfg(feature = "compact_filters")]
 impl From<crate::blockchain::compact_filters::CompactFiltersError> for Error {
