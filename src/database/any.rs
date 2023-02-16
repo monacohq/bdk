@@ -68,6 +68,8 @@ macro_rules! impl_inner_method {
             $enum_name::Sled(inner) => inner.$name( $($args, )* ),
             #[cfg(feature = "sqlite")]
             $enum_name::Sqlite(inner) => inner.$name( $($args, )* ),
+            #[cfg(feature = "postgres-db")]
+            $enum_name::Postgres(inner) => inner.$name( $($args, )* ),
         }
     }
 }
@@ -89,6 +91,10 @@ pub enum AnyDatabase {
     #[cfg_attr(docsrs, doc(cfg(feature = "sqlite")))]
     /// Sqlite embedded database using [`rusqlite`]
     Sqlite(sqlite::SqliteDatabase),
+    #[cfg(feature = "postgres-db")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-db")))]
+    /// Postgres database using [`postgres`]
+    Postgres(postgres_db::PostgresDatabase),
 }
 
 impl_from!(memory::MemoryDatabase, AnyDatabase, Memory,);
@@ -107,6 +113,10 @@ pub enum AnyBatch {
     #[cfg_attr(docsrs, doc(cfg(feature = "sqlite")))]
     /// Sqlite embedded database using [`rusqlite`]
     Sqlite(<sqlite::SqliteDatabase as BatchDatabase>::Batch),
+    #[cfg(feature = "postgres-db")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-db")))]
+    /// Postgres database using [`postgres`]
+    Postgres(postgres_db::PostgresDatabase),
 }
 
 impl_from!(
@@ -116,6 +126,7 @@ impl_from!(
 );
 impl_from!(<sled::Tree as BatchDatabase>::Batch, AnyBatch, Sled, #[cfg(feature = "key-value-db")]);
 impl_from!(<sqlite::SqliteDatabase as BatchDatabase>::Batch, AnyBatch, Sqlite, #[cfg(feature = "sqlite")]);
+impl_from!(<postgres_db::PostgresDatabase as BatchDatabase>::Batch, AnyBatch, Postgres, #[cfg(feature = "postgres-db")]);
 
 impl BatchOperations for AnyDatabase {
     fn set_script_pubkey(
@@ -326,6 +337,8 @@ impl BatchDatabase for AnyDatabase {
             AnyDatabase::Sled(inner) => inner.begin_batch().into(),
             #[cfg(feature = "sqlite")]
             AnyDatabase::Sqlite(inner) => inner.begin_batch().into(),
+            #[cfg(feature = "postgres-db")]
+            AnyDatabase::Postgres(inner) => inner.begin_batch().into(),
         }
     }
     fn commit_batch(&mut self, batch: Self::Batch) -> Result<(), Error> {
@@ -344,6 +357,11 @@ impl BatchDatabase for AnyDatabase {
             AnyDatabase::Sqlite(db) => match batch {
                 AnyBatch::Sqlite(batch) => db.commit_batch(batch),
                 _ => unimplemented!("Other batch shouldn't be used with Sqlite db."),
+            },
+            #[cfg(feature = "postgres-db")]
+            AnyDatabase::Postgres(db) => match batch {
+                AnyBatch::Postgres(batch) => db.commit_batch(batch),
+                _ => unimplemented!("Other batch shouldn't be used with Postgres db."),
             },
         }
     }
@@ -385,6 +403,28 @@ impl ConfigurableDatabase for sqlite::SqliteDatabase {
     }
 }
 
+/// Configuration type for a [`postgres_db::PostgresDatabase`] database
+#[cfg(feature = "postgres-db")]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct PostgresDbConfiguration {
+    uri: String,
+    database: String,
+    descriptor: String,
+}
+
+#[cfg(feature = "postgres-db")]
+impl ConfigurableDatabase for postgres_db::PostgresDatabase {
+    type Config = PostgresDbConfiguration;
+
+    fn from_config(config: &Self::Config) -> Result<Self, Error> {
+        Ok(postgres_db::PostgresDatabase::new(
+            &config.uri,
+            &config.database,
+            &config.descriptor,
+        )?)
+    }
+}
+
 /// Type that can contain any of the database configurations defined by the library
 ///
 /// This allows storing a single configuration that can be loaded into an [`AnyDatabase`]
@@ -402,6 +442,10 @@ pub enum AnyDatabaseConfig {
     #[cfg_attr(docsrs, doc(cfg(feature = "sqlite")))]
     /// Sqlite embedded database using [`rusqlite`]
     Sqlite(SqliteDbConfiguration),
+    #[cfg(feature = "postgres-db")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-db")))]
+    /// Postgres database using [`postgres`]
+    Postgres(PostgresDbConfiguration),
 }
 
 impl ConfigurableDatabase for AnyDatabase {
@@ -418,6 +462,10 @@ impl ConfigurableDatabase for AnyDatabase {
             AnyDatabaseConfig::Sqlite(inner) => {
                 AnyDatabase::Sqlite(sqlite::SqliteDatabase::from_config(inner)?)
             }
+            #[cfg(feature = "postgres-db")]
+            AnyDatabaseConfig::Postgres(inner) => {
+                AnyDatabase::Postgres(postgres_db::PostgresDatabase::from_config(inner)?)
+            }
         })
     }
 }
@@ -425,3 +473,4 @@ impl ConfigurableDatabase for AnyDatabase {
 impl_from!((), AnyDatabaseConfig, Memory,);
 impl_from!(SledDbConfiguration, AnyDatabaseConfig, Sled, #[cfg(feature = "key-value-db")]);
 impl_from!(SqliteDbConfiguration, AnyDatabaseConfig, Sqlite, #[cfg(feature = "sqlite")]);
+impl_from!(PostgresDbConfiguration, AnyDatabaseConfig, Postgres, #[cfg(feature = "postgres-db")]);

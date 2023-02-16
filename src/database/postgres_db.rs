@@ -10,6 +10,7 @@
 // licenses.
 use std::cell::RefCell;
 use std::convert::{TryFrom, TryInto};
+use std::fmt;
 
 use bitcoin::consensus::encode::{deserialize, serialize};
 use bitcoin::hash_types::Txid;
@@ -75,15 +76,23 @@ static MIGRATIONS: &[&str] = &[
     "DROP TABLE script_pubkeys_old;"
 ];
 
-/// Postgres database stored remotely.
-///
-/// This is a permanent storage solution for devices and platforms that provide a filesystem.
+/// Postgres database stored remotely..
 /// [`crate::database`]
 pub struct PostgresDatabase {
     client: RefCell<Client>,
     uri: String,
     database: String,
     descriptor: String,
+}
+
+impl fmt::Debug for PostgresDatabase {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PostgresDatabase")
+            .field("uri", &self.uri)
+            .field("database", &self.database)
+            .field("descriptor", &self.descriptor)
+            .finish()
+    }
 }
 
 /// A wallet transaction
