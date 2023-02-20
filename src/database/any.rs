@@ -410,6 +410,7 @@ pub struct PostgresDbConfiguration {
     uri: String,
     database: String,
     descriptor: String,
+    tls_mode: bool,
 }
 
 #[cfg(feature = "postgres-db")]
@@ -417,11 +418,12 @@ impl ConfigurableDatabase for postgres_db::PostgresDatabase {
     type Config = PostgresDbConfiguration;
 
     fn from_config(config: &Self::Config) -> Result<Self, Error> {
-        Ok(postgres_db::PostgresDatabase::new(
+        postgres_db::PostgresDatabase::new(
             &config.uri,
             &config.database,
             &config.descriptor,
-        )?)
+            config.tls_mode,
+        )
     }
 }
 

@@ -15,6 +15,8 @@ use std::fmt;
 use bitcoin::consensus::encode::{deserialize, serialize};
 use bitcoin::hash_types::Txid;
 use bitcoin::{OutPoint, Script, Transaction, TxOut};
+use openssl::ssl::{SslConnector, SslMethod, SslVerifyMode};
+use postgres_openssl::MakeTlsConnector;
 use serde::{Deserialize, Serialize};
 use sha256::digest;
 
@@ -22,7 +24,7 @@ use crate::database::{BatchDatabase, BatchOperations, Database, SyncTime};
 use crate::types::*;
 use crate::Error;
 
-use postgres::Client;
+use postgres::{Client, NoTls};
 
 pub type PostgresResult<T, E = postgres::Error> = Result<T, E>;
 
@@ -83,6 +85,7 @@ pub struct PostgresDatabase {
     uri: String,
     database: String,
     descriptor: String,
+    tls_mode: bool,
 }
 
 impl fmt::Debug for PostgresDatabase {
@@ -164,12 +167,10 @@ impl PostgresDatabase {
     ///
     /// Attempts to connect to the specified database, if such database
     /// doesn't exist, creates it via the base PostgreSQL connection.
-    ///
-    /// TODO: implement TLS mode.
-    pub fn new(uri: &str, database: &str, descriptor: &str) -> Result<Self, Error> {
+    pub fn new(uri: &str, database: &str, descriptor: &str, tls_mode: bool) -> Result<Self, Error> {
         let descriptor_hash = digest(descriptor);
-        let conn_str = Self::create_full_database_uri(uri, database, &descriptor);
-        match Client::connect(&conn_str, postgres::tls::NoTls) {
+
+        match Self::connect(uri, database, descriptor, tls_mode) {
             Ok(mut c) => {
                 migrate(&mut c)?;
                 Ok(Self {
@@ -177,21 +178,25 @@ impl PostgresDatabase {
                     uri: uri.to_string(),
                     database: database.to_string(),
                     descriptor: descriptor.to_string(),
+                    tls_mode,
                 })
             }
-            Err(e) => match e.code() {
+            Err(Error::Postgres(e)) => match e.code() {
                 Some(state) if state == &postgres::error::SqlState::UNDEFINED_DATABASE => {
-                    let mut conn = Self::create_new_database(uri, database, &descriptor_hash)?;
+                    let mut conn =
+                        Self::create_new_database(uri, database, &descriptor_hash, tls_mode)?;
                     migrate(&mut conn)?;
                     Ok(Self {
                         client: RefCell::new(conn),
                         uri: uri.to_string(),
                         database: database.to_string(),
                         descriptor: descriptor.to_string(),
+                        tls_mode,
                     })
                 }
                 _ => Err(e.into()),
             },
+            Err(e) => Err(e),
         }
     }
 
@@ -200,23 +205,56 @@ impl PostgresDatabase {
     /// Due to potential race, the database could have been created via
     /// concurrent connection. This is fine, as long as we treat the database
     /// duplication error as `Ok`.
-    fn create_new_database(uri: &str, database: &str, descriptor: &str) -> Result<Client, Error> {
-        let conn_str = Self::create_full_database_uri(uri, database, descriptor);
-        match Client::connect(uri, postgres::tls::NoTls)?
-            .execute(&format!("CREATE DATABASE {database}_{descriptor}"), &[])
-        {
-            Ok(_) => Ok(Client::connect(&conn_str, postgres::tls::NoTls)?),
+    fn create_new_database(
+        uri: &str,
+        database: &str,
+        descriptor: &str,
+        tls_mode: bool,
+    ) -> Result<Client, Error> {
+        let mut client = if tls_mode {
+            let mut builder = SslConnector::builder(SslMethod::tls()).map_err(|e| {
+                Error::Generic(format!("Failed to create SSL connection builder: {e}"))
+            })?;
+            builder.set_verify(SslVerifyMode::NONE);
+
+            Client::connect(uri, MakeTlsConnector::new(builder.build()))?
+        } else {
+            Client::connect(uri, postgres::tls::NoTls)?
+        };
+
+        match client.execute(&format!("CREATE DATABASE {database}_{descriptor}"), &[]) {
+            Ok(_) => Self::connect(uri, database, descriptor, tls_mode),
             Err(e) => match e.code() {
                 Some(state) if state == &postgres::error::SqlState::DUPLICATE_DATABASE => {
-                    Ok(Client::connect(&conn_str, postgres::tls::NoTls)?)
+                    Self::connect(uri, database, descriptor, tls_mode)
                 }
                 _ => Err(e.into()),
             },
         }
     }
 
-    fn create_full_database_uri(uri: &str, database: &str, descriptor: &str) -> String {
-        format!("{uri}/{database}_{descriptor}")
+    fn connect(
+        uri: &str,
+        database: &str,
+        descriptor: &str,
+        tls_mode: bool,
+    ) -> Result<Client, Error> {
+        if tls_mode {
+            let mut builder = SslConnector::builder(SslMethod::tls()).map_err(|e| {
+                Error::Generic(format!("Failed to create SSL connection builder: {e}"))
+            })?;
+            builder.set_verify(SslVerifyMode::NONE);
+
+            Ok(Client::connect(
+                &format!("{uri}/{database}_{descriptor}?sslmode=require"),
+                MakeTlsConnector::new(builder.build()),
+            )?)
+        } else {
+            Ok(Client::connect(
+                &format!("{uri}/{database}_{descriptor}"),
+                NoTls,
+            )?)
+        }
     }
 
     fn insert_script_pubkey(
@@ -1086,7 +1124,7 @@ impl BatchDatabase for PostgresDatabase {
     type Batch = PostgresDatabase;
 
     fn begin_batch(&self) -> Self::Batch {
-        let db = PostgresDatabase::new(&self.uri, &self.database, &self.descriptor)
+        let db = PostgresDatabase::new(&self.uri, &self.database, &self.descriptor, self.tls_mode)
             .expect("Unexpected failure");
         db.client
             .borrow_mut()
@@ -1170,6 +1208,7 @@ pub mod test {
             "postgresql://postgres@localhost",
             "test",
             &time.as_nanos().to_string(),
+            true,
         )?)
     }
 
