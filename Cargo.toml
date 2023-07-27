@@ -44,12 +44,12 @@ branch = "sgx"
 
 [dependencies.bitcoin]
 git = "ssh://git@github.com/monacohq/rust-bitcoin.git"
-branch = "altcoin-support-v0.29.2"
+branch = "ravencoin-support"
 features = ["serde", "base64", "rand"]
 
 [dependencies.miniscript]
 git = "ssh://git@github.com/monacohq/rust-miniscript.git"
-branch = "altcoin-support-v9.0.0"
+branch = "ravencoin-support"
 features = ["serde"]
 
 # Platform-specific dependencies
@@ -180,5 +180,5 @@ features = ["compiler", "electrum", "esplora", "use-esplora-blocking", "compact_
 rustdoc-args = ["--cfg", "docsrs"]
 
 [patch.crates-io]
-bitcoin = { git = "ssh://git@github.com/monacohq/rust-bitcoin.git", branch = "altcoin-support-v0.29.2" }
+bitcoin = { git = "ssh://git@github.com/monacohq/rust-bitcoin.git", branch = "ravencoin-support" }
 atty = { git = "https://git@github.com/softprops/atty.git", rev = "6633c0e1446aa19e6cd00e00e39770da43081bda" } # Includes SGX patches
