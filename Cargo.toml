@@ -49,7 +49,7 @@ features = ["serde", "base64", "rand"]
 
 [dependencies.miniscript]
 git = "ssh://git@github.com/monacohq/rust-miniscript.git"
-branch = "altcoin-support-v9.0.0"
+branch = "altcoin-support-v9.0.2"
 features = ["serde"]
 
 # Platform-specific dependencies
